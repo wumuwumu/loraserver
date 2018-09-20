@@ -63,7 +63,6 @@ func init() {
 	viper.SetDefault("network_server.gateway.stats.aggregation_intervals", []string{"minute", "hour", "day"})
 	viper.SetDefault("network_server.gateway.stats.create_gateway_on_stats", true)
 	viper.SetDefault("network_server.device_session_ttl", time.Hour*24*31)
-	viper.SetDefault("join_server.default.server", "http://localhost:8003")
 	viper.SetDefault("network_server.network_settings.installation_margin", 10)
 	viper.SetDefault("network_server.network_settings.rx1_delay", 1)
 	viper.SetDefault("network_server.network_settings.rx2_frequency", -1)
@@ -76,6 +75,8 @@ func init() {
 	viper.SetDefault("network_server.gateway.backend.mqtt.ack_topic_template", "gateway/+/ack")
 	viper.SetDefault("network_server.gateway.backend.mqtt.config_topic_template", "gateway/{{ .MAC }}/config")
 	viper.SetDefault("network_server.gateway.backend.mqtt.clean_session", true)
+	viper.SetDefault("join_server.resolve_domain_suffix", ".joineuis.lora-alliance.org")
+	viper.SetDefault("join_server.default.server", "http://localhost:8003")
 
 	rootCmd.AddCommand(versionCmd)
 	rootCmd.AddCommand(configCmd)

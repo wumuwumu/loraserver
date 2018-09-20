@@ -27,13 +27,13 @@ import (
 	"github.com/brocaar/loraserver/api/ns"
 	"github.com/brocaar/loraserver/internal/api"
 	"github.com/brocaar/loraserver/internal/api/client/asclient"
-	"github.com/brocaar/loraserver/internal/api/client/jsclient"
 	"github.com/brocaar/loraserver/internal/backend/controller"
 	gwBackend "github.com/brocaar/loraserver/internal/backend/gateway"
 	"github.com/brocaar/loraserver/internal/common"
 	"github.com/brocaar/loraserver/internal/config"
 	"github.com/brocaar/loraserver/internal/downlink"
 	"github.com/brocaar/loraserver/internal/gateway"
+	"github.com/brocaar/loraserver/internal/joinserver"
 	"github.com/brocaar/loraserver/internal/migrations"
 	"github.com/brocaar/loraserver/internal/migrations/code"
 	"github.com/brocaar/loraserver/internal/storage"
@@ -259,17 +259,11 @@ func setGeolocationServer() error {
 }
 
 func setJoinServer() error {
-	jsClient, err := jsclient.NewClient(
-		config.C.JoinServer.Default.Server,
-		config.C.JoinServer.Default.CACert,
-		config.C.JoinServer.Default.TLSCert,
-		config.C.JoinServer.Default.TLSKey,
-	)
+	var err error
+	config.C.JoinServer.Pool, err = joinserver.NewPool(config.C.JoinServer)
 	if err != nil {
-		return errors.Wrap(err, "create new join-server client error")
+		return errors.Wrap(err, "new join-server pool error")
 	}
-	config.C.JoinServer.Pool = jsclient.NewPool(jsClient)
-
 	return nil
 }
 
