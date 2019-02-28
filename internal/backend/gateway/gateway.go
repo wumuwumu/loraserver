@@ -1,6 +1,9 @@
 package gateway
 
-import "github.com/brocaar/loraserver/api/gw"
+import (
+	"github.com/brocaar/loraserver/api/as"
+	"github.com/brocaar/loraserver/api/gw"
+)
 
 var backend Gateway
 
@@ -19,6 +22,7 @@ func SetBackend(b Gateway) {
 type Gateway interface {
 	SendTXPacket(gw.DownlinkFrame) error                   // send the given packet to the gateway
 	SendGatewayConfigPacket(gw.GatewayConfiguration) error // SendGatewayConfigPacket sends the given GatewayConfigPacket to the gateway.
+    SendUplinkPacket(as.HandleUplinkDataRequest) error
 	RXPacketChan() chan gw.UplinkFrame                     // channel containing the received packets
 	StatsPacketChan() chan gw.GatewayStats                 // channel containing the received gateway stats
 	DownlinkTXAckChan() chan gw.DownlinkTXAck              // channel containing the downlink tx acknowledgements

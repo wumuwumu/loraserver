@@ -3,6 +3,7 @@ package data
 import (
 	"context"
 	"fmt"
+	"github.com/brocaar/loraserver/internal/backend/gateway"
 	"time"
 
 	"github.com/pkg/errors"
@@ -446,9 +447,7 @@ func handleFRMPayloadMACCommands(ctx *dataContext) error {
 }
 
 func sendFRMPayloadToApplicationServer(ctx *dataContext) error {
-	if ctx.MACPayload.FPort == nil || (ctx.MACPayload.FPort != nil && *ctx.MACPayload.FPort == 0) {
-		return nil
-	}
+
 
 	publishDataUpReq := as.HandleUplinkDataRequest{
 		DevEui:  ctx.DeviceSession.DevEUI[:],
@@ -457,7 +456,14 @@ func sendFRMPayloadToApplicationServer(ctx *dataContext) error {
 		Adr:     ctx.MACPayload.FHDR.FCtrl.ADR,
 		TxInfo:  ctx.RXPacket.TXInfo,
 	}
+	go func(p as.HandleUplinkDataRequest) {
+		gateway.Backend().SendUplinkPacket(p);
+	}(publishDataUpReq)
 
+
+	if ctx.MACPayload.FPort == nil || (ctx.MACPayload.FPort != nil && *ctx.MACPayload.FPort == 0) {
+		return nil
+	}
 	dr, err := helpers.GetDataRateIndex(true, ctx.RXPacket.TXInfo, band.Band())
 	if err != nil {
 		errors.Wrap(err, "get data-rate error")

@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/base64"
 	"fmt"
+	"github.com/brocaar/loraserver/api/as"
 	"strings"
 	"sync"
 	"time"
@@ -142,6 +143,11 @@ func (b *Backend) SendTXPacket(pl gw.DownlinkFrame) error {
 	}
 
 	return b.publishCommand(gatewayID, "down", bb)
+}
+
+func (b *Backend) SendUplinkPacket(uplinkPacket as.HandleUplinkDataRequest) error{
+
+	return nil
 }
 
 // SendGatewayConfigPacket sends the given gateway configuration to the gateway.

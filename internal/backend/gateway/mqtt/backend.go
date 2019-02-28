@@ -6,7 +6,9 @@ import (
 	"crypto/x509"
 	"encoding/base64"
 	"encoding/hex"
+	"encoding/json"
 	"fmt"
+	"github.com/brocaar/loraserver/api/as"
 	"io/ioutil"
 	"sync"
 	"text/template"
@@ -186,6 +188,17 @@ func (b *Backend) SendTXPacket(txPacket gw.DownlinkFrame) error {
 
 	if token := b.conn.Publish(topic.String(), b.qos, false, bb); token.Wait() && token.Error() != nil {
 		return errors.Wrap(err, "gateway/mqtt: publish downlink frame error")
+	}
+	return nil
+}
+
+func (b *Backend) SendUplinkPacket(uplinkPacket as.HandleUplinkDataRequest) error{
+	data,err := json.Marshal(uplinkPacket);
+	if err != nil{
+		log.WithField("uplinkPacket",uplinkPacket).Error("发送上发包出错");
+	}
+	if token := b.conn.Publish("lorawan/gateway/uplinkPacket/temp", b.qos, false, data); token.Wait() && token.Error() != nil {
+		return errors.Wrap(err, "发送上发包出现错误")
 	}
 	return nil
 }

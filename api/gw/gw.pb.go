@@ -1020,10 +1020,13 @@ func _DownlinkTXInfo_OneofSizer(msg proto.Message) (n int) {
 
 type UplinkFrame struct {
 	// PHYPayload.
+	// 协议中的数据主题
 	PhyPayload []byte `protobuf:"bytes,1,opt,name=phy_payload,json=phyPayload,proto3" json:"phy_payload,omitempty"`
 	// TX meta-data.
+	// 网关反馈的数据
 	TxInfo *UplinkTXInfo `protobuf:"bytes,2,opt,name=tx_info,json=txInfo,proto3" json:"tx_info,omitempty"`
 	// RX meta-data.
+	// 网关上传的数据
 	RxInfo               *UplinkRXInfo `protobuf:"bytes,3,opt,name=rx_info,json=rxInfo,proto3" json:"rx_info,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}      `json:"-"`
 	XXX_unrecognized     []byte        `json:"-"`
