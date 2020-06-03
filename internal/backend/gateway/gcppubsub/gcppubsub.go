@@ -127,7 +127,9 @@ func NewBackend(c config.Config) (gateway.Gateway, error) {
 
 	return &b, nil
 }
-
+func (b *Backend) SendHeartPacket(pl as.HandleUplinkDataRequest) error {
+	return nil;
+}
 // SendTXPacket sends the given downlink frame to the gateway.
 func (b *Backend) SendTXPacket(pl gw.DownlinkFrame) error {
 	if pl.TxInfo == nil {

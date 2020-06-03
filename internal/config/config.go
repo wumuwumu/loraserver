@@ -110,6 +110,7 @@ type Config struct {
 					StatsTopicTemplate    string `mapstructure:"stats_topic_template"`
 					AckTopicTemplate      string `mapstructure:"ack_topic_template"`
 					ConfigTopicTemplate   string `mapstructure:"config_topic_template"`
+					HeartTopicTemplate	  string	`mapstructure:"heart_topic_template"`
 				} `mapstructure:"mqtt"`
 
 				GCPPubSub struct {

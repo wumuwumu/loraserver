@@ -53,6 +53,7 @@ type Backend struct {
 	uplinkTopicTemplate string
 	statsTopicTemplate  string
 	ackTopicTemplate    string
+	heartTopic	string
 	qos                 uint8
 
 	gatewayMarshaler map[lorawan.EUI64]marshaler.Type
@@ -74,6 +75,8 @@ func NewBackend(redisPool *redis.Pool, c config.Config) (gateway.Gateway, error)
 		ackTopicTemplate:    conf.AckTopicTemplate,
 		qos:                 conf.QOS,
 	}
+
+	b.heartTopic = conf.HeartTopicTemplate
 
 	b.downlinkTemplate, err = template.New("downlink").Parse(conf.DownlinkTopicTemplate)
 	if err != nil {
@@ -192,13 +195,16 @@ func (b *Backend) SendTXPacket(txPacket gw.DownlinkFrame) error {
 	return nil
 }
 
-func (b *Backend) SendUplinkPacket(uplinkPacket as.HandleUplinkDataRequest) error{
-	data,err := json.Marshal(uplinkPacket);
-	if err != nil{
-		log.WithField("uplinkPacket",uplinkPacket).Error("发送上发包出错");
+// SendTXPacket sends the given downlink-frame to the gateway.
+func (b *Backend) SendHeartPacket(publishDataUpReq as.HandleUplinkDataRequest) error {
+
+	bb, err := json.Marshal(publishDataUpReq)
+	if err != nil {
+		return errors.Wrap(err, "gateway/mqtt: marshal heart frame error")
 	}
-	if token := b.conn.Publish("lorawan/gateway/uplinkPacket/temp", b.qos, false, data); token.Wait() && token.Error() != nil {
-		return errors.Wrap(err, "发送上发包出现错误")
+
+	if token := b.conn.Publish(b.heartTopic, b.qos, false, bb); token.Wait() && token.Error() != nil {
+		return errors.Wrap(err, "gateway/mqtt: publish heart frame error")
 	}
 	return nil
 }
