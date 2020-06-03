@@ -11,6 +11,8 @@ import (
 	"strings"
 	"syscall"
 
+	"github.com/brocaar/loraserver/internal/adr"
+	"github.com/brocaar/loraserver/internal/backend/gateway/azureiothub"
 	grpc_middleware "github.com/grpc-ecosystem/go-grpc-middleware"
 	grpc_logrus "github.com/grpc-ecosystem/go-grpc-middleware/logging/logrus"
 	grpc_ctxtags "github.com/grpc-ecosystem/go-grpc-middleware/tags"
@@ -55,9 +57,11 @@ func run(cmd *cobra.Command, args []string) error {
 		setupStorage,
 		setGatewayBackend,
 		setupApplicationServer,
+		setupADR,
 		setupGeolocationServer,
 		setupJoinServer,
 		setupNetworkController,
+		setupUplink,
 		setupDownlink,
 		fixV2RedisCache,
 		migrateGatewayStats,
@@ -194,6 +198,13 @@ func setupStorage() error {
 	return nil
 }
 
+func setupADR() error {
+	if err := adr.Setup(config.C); err != nil {
+		errors.Wrap(err, "setup adr error")
+	}
+	return nil
+}
+
 func setGatewayBackend() error {
 	var err error
 	var gw gwbackend.Gateway
@@ -206,6 +217,8 @@ func setGatewayBackend() error {
 		)
 	case "gcp_pub_sub":
 		gw, err = gcppubsub.NewBackend(config.C)
+	case "azure_iot_hub":
+		gw, err = azureiothub.NewBackend(config.C)
 	default:
 		return fmt.Errorf("unexpected gateway backend type: %s", config.C.NetworkServer.Gateway.Backend.Type)
 	}
@@ -291,6 +304,13 @@ func setupNetworkController() error {
 		controller.SetClient(ncClient)
 	}
 
+	return nil
+}
+
+func setupUplink() error {
+	if err := uplink.Setup(config.C); err != nil {
+		return errors.Wrap(err, "setup link error")
+	}
 	return nil
 }
 

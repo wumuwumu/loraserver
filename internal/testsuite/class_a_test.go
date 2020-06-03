@@ -54,6 +54,7 @@ func (ts *ClassATestSuite) SetupSuite() {
 	})
 
 	ts.CreateServiceProfile(storage.ServiceProfile{
+		DRMax:         5,
 		AddGWMetadata: true,
 	})
 
@@ -69,6 +70,7 @@ func (ts *ClassATestSuite) SetupSuite() {
 			Longitude: 2,
 			Altitude:  3,
 		},
+		Context: []byte{1, 2, 3, 4},
 	}
 	ts.RXInfo.Time = ptypes.TimestampNow()
 	ts.RXInfo.TimeSinceGpsEpoch = ptypes.DurationProto(10 * time.Second)
@@ -527,6 +529,13 @@ func (ts *ClassATestSuite) TestLW10Uplink() {
 							CodeRate:              "4/5",
 						},
 					},
+					Context: ts.RXInfo.Context,
+					Timing:  gw.DownlinkTiming_DELAY,
+					TimingInfo: &gw.DownlinkTXInfo_DelayTimingInfo{
+						DelayTimingInfo: &gw.DelayTimingInfo{
+							Delay: ptypes.DurationProto(time.Second),
+						},
+					},
 				}, lorawan.PHYPayload{
 					MHDR: lorawan.MHDR{
 						MType: lorawan.UnconfirmedDataDown,
@@ -589,6 +598,13 @@ func (ts *ClassATestSuite) TestLW10Uplink() {
 							SpreadingFactor:       12,
 							PolarizationInversion: true,
 							CodeRate:              "4/5",
+						},
+					},
+					Context: ts.RXInfo.Context,
+					Timing:  gw.DownlinkTiming_DELAY,
+					TimingInfo: &gw.DownlinkTXInfo_DelayTimingInfo{
+						DelayTimingInfo: &gw.DelayTimingInfo{
+							Delay: ptypes.DurationProto(time.Second),
 						},
 					},
 				}, lorawan.PHYPayload{
@@ -801,6 +817,13 @@ func (ts *ClassATestSuite) TestLW10RXDelay() {
 							CodeRate:              "4/5",
 						},
 					},
+					Context: ts.RXInfo.Context,
+					Timing:  gw.DownlinkTiming_DELAY,
+					TimingInfo: &gw.DownlinkTXInfo_DelayTimingInfo{
+						DelayTimingInfo: &gw.DelayTimingInfo{
+							Delay: ptypes.DurationProto(time.Second * 3),
+						},
+					},
 				}, lorawan.PHYPayload{
 					MHDR: lorawan.MHDR{
 						MType: lorawan.UnconfirmedDataDown,
@@ -976,6 +999,13 @@ func (ts *ClassATestSuite) TestLW10MACCommands() {
 							CodeRate:              "4/5",
 						},
 					},
+					Context: ts.RXInfo.Context,
+					Timing:  gw.DownlinkTiming_DELAY,
+					TimingInfo: &gw.DownlinkTXInfo_DelayTimingInfo{
+						DelayTimingInfo: &gw.DelayTimingInfo{
+							Delay: ptypes.DurationProto(time.Second),
+						},
+					},
 				}, lorawan.PHYPayload{
 					MHDR: lorawan.MHDR{
 						MType: lorawan.UnconfirmedDataDown,
@@ -1044,6 +1074,13 @@ func (ts *ClassATestSuite) TestLW10MACCommands() {
 							SpreadingFactor:       12,
 							PolarizationInversion: true,
 							CodeRate:              "4/5",
+						},
+					},
+					Context: ts.RXInfo.Context,
+					Timing:  gw.DownlinkTiming_DELAY,
+					TimingInfo: &gw.DownlinkTXInfo_DelayTimingInfo{
+						DelayTimingInfo: &gw.DelayTimingInfo{
+							Delay: ptypes.DurationProto(time.Second),
 						},
 					},
 				}, lorawan.PHYPayload{
@@ -1221,6 +1258,13 @@ func (ts *ClassATestSuite) TestLW10MACCommandsDisabled() {
 							SpreadingFactor:       12,
 							PolarizationInversion: true,
 							CodeRate:              "4/5",
+						},
+					},
+					Context: ts.RXInfo.Context,
+					Timing:  gw.DownlinkTiming_DELAY,
+					TimingInfo: &gw.DownlinkTXInfo_DelayTimingInfo{
+						DelayTimingInfo: &gw.DelayTimingInfo{
+							Delay: ptypes.DurationProto(time.Second),
 						},
 					},
 				}, lorawan.PHYPayload{
@@ -1505,6 +1549,13 @@ func (ts *ClassATestSuite) TestLW11DeviceQueue() {
 							CodeRate:              "4/5",
 						},
 					},
+					Context: ts.RXInfo.Context,
+					Timing:  gw.DownlinkTiming_DELAY,
+					TimingInfo: &gw.DownlinkTXInfo_DelayTimingInfo{
+						DelayTimingInfo: &gw.DelayTimingInfo{
+							Delay: ptypes.DurationProto(time.Second),
+						},
+					},
 				}, lorawan.PHYPayload{
 					MHDR: lorawan.MHDR{
 						MType: lorawan.UnconfirmedDataDown,
@@ -1573,6 +1624,13 @@ func (ts *ClassATestSuite) TestLW11DeviceQueue() {
 							SpreadingFactor:       12,
 							PolarizationInversion: true,
 							CodeRate:              "4/5",
+						},
+					},
+					Context: ts.RXInfo.Context,
+					Timing:  gw.DownlinkTiming_DELAY,
+					TimingInfo: &gw.DownlinkTXInfo_DelayTimingInfo{
+						DelayTimingInfo: &gw.DelayTimingInfo{
+							Delay: ptypes.DurationProto(time.Second),
 						},
 					},
 				}, lorawan.PHYPayload{
@@ -1672,6 +1730,13 @@ func (ts *ClassATestSuite) TestLW10DeviceQueue() {
 							CodeRate:              "4/5",
 						},
 					},
+					Context: ts.RXInfo.Context,
+					Timing:  gw.DownlinkTiming_DELAY,
+					TimingInfo: &gw.DownlinkTXInfo_DelayTimingInfo{
+						DelayTimingInfo: &gw.DelayTimingInfo{
+							Delay: ptypes.DurationProto(time.Second),
+						},
+					},
 				}, lorawan.PHYPayload{
 					MHDR: lorawan.MHDR{
 						MType: lorawan.UnconfirmedDataDown,
@@ -1743,6 +1808,13 @@ func (ts *ClassATestSuite) TestLW10DeviceQueue() {
 							CodeRate:              "4/5",
 						},
 					},
+					Context: ts.RXInfo.Context,
+					Timing:  gw.DownlinkTiming_DELAY,
+					TimingInfo: &gw.DownlinkTXInfo_DelayTimingInfo{
+						DelayTimingInfo: &gw.DelayTimingInfo{
+							Delay: ptypes.DurationProto(time.Second),
+						},
+					},
 				}, lorawan.PHYPayload{
 					MHDR: lorawan.MHDR{
 						MType: lorawan.UnconfirmedDataDown,
@@ -1812,6 +1884,13 @@ func (ts *ClassATestSuite) TestLW10DeviceQueue() {
 							SpreadingFactor:       12,
 							PolarizationInversion: true,
 							CodeRate:              "4/5",
+						},
+					},
+					Context: ts.RXInfo.Context,
+					Timing:  gw.DownlinkTiming_DELAY,
+					TimingInfo: &gw.DownlinkTXInfo_DelayTimingInfo{
+						DelayTimingInfo: &gw.DelayTimingInfo{
+							Delay: ptypes.DurationProto(time.Second),
 						},
 					},
 				}, lorawan.PHYPayload{
@@ -1934,6 +2013,13 @@ func (ts *ClassATestSuite) TestLW10DeviceQueue() {
 							CodeRate:              "4/5",
 						},
 					},
+					Context: ts.RXInfo.Context,
+					Timing:  gw.DownlinkTiming_DELAY,
+					TimingInfo: &gw.DownlinkTXInfo_DelayTimingInfo{
+						DelayTimingInfo: &gw.DelayTimingInfo{
+							Delay: ptypes.DurationProto(time.Second),
+						},
+					},
 				}, lorawan.PHYPayload{
 					MHDR: lorawan.MHDR{
 						MType: lorawan.UnconfirmedDataDown,
@@ -2017,6 +2103,13 @@ func (ts *ClassATestSuite) TestLW10ADR() {
 							SpreadingFactor:       12,
 							PolarizationInversion: true,
 							CodeRate:              "4/5",
+						},
+					},
+					Context: ts.RXInfo.Context,
+					Timing:  gw.DownlinkTiming_DELAY,
+					TimingInfo: &gw.DownlinkTXInfo_DelayTimingInfo{
+						DelayTimingInfo: &gw.DelayTimingInfo{
+							Delay: ptypes.DurationProto(time.Second),
 						},
 					},
 				}, lorawan.PHYPayload{
@@ -2212,6 +2305,13 @@ func (ts *ClassATestSuite) TestLW10ADR() {
 							CodeRate:              "4/5",
 						},
 					},
+					Context: ts.RXInfo.Context,
+					Timing:  gw.DownlinkTiming_DELAY,
+					TimingInfo: &gw.DownlinkTXInfo_DelayTimingInfo{
+						DelayTimingInfo: &gw.DelayTimingInfo{
+							Delay: ptypes.DurationProto(time.Second),
+						},
+					},
 				}, lorawan.PHYPayload{
 					MHDR: lorawan.MHDR{
 						MType: lorawan.UnconfirmedDataDown,
@@ -2267,6 +2367,13 @@ func (ts *ClassATestSuite) TestLW10ADR() {
 							SpreadingFactor:       12,
 							PolarizationInversion: true,
 							CodeRate:              "4/5",
+						},
+					},
+					Context: ts.RXInfo.Context,
+					Timing:  gw.DownlinkTiming_DELAY,
+					TimingInfo: &gw.DownlinkTXInfo_DelayTimingInfo{
+						DelayTimingInfo: &gw.DelayTimingInfo{
+							Delay: ptypes.DurationProto(time.Second),
 						},
 					},
 				}, lorawan.PHYPayload{
@@ -2414,6 +2521,13 @@ func (ts *ClassATestSuite) TestLW10ADR() {
 							CodeRate:              "4/5",
 						},
 					},
+					Context: ts.RXInfo.Context,
+					Timing:  gw.DownlinkTiming_DELAY,
+					TimingInfo: &gw.DownlinkTXInfo_DelayTimingInfo{
+						DelayTimingInfo: &gw.DelayTimingInfo{
+							Delay: ptypes.DurationProto(time.Second),
+						},
+					},
 				}, lorawan.PHYPayload{
 					MHDR: lorawan.MHDR{
 						MType: lorawan.UnconfirmedDataDown,
@@ -2482,6 +2596,13 @@ func (ts *ClassATestSuite) TestLW10ADR() {
 							SpreadingFactor:       12,
 							PolarizationInversion: true,
 							CodeRate:              "4/5",
+						},
+					},
+					Context: ts.RXInfo.Context,
+					Timing:  gw.DownlinkTiming_DELAY,
+					TimingInfo: &gw.DownlinkTXInfo_DelayTimingInfo{
+						DelayTimingInfo: &gw.DelayTimingInfo{
+							Delay: ptypes.DurationProto(time.Second),
 						},
 					},
 				}, lorawan.PHYPayload{
@@ -2586,6 +2707,13 @@ func (ts *ClassATestSuite) TestLW10DeviceStatusRequest() {
 							SpreadingFactor:       12,
 							PolarizationInversion: true,
 							CodeRate:              "4/5",
+						},
+					},
+					Context: ts.RXInfo.Context,
+					Timing:  gw.DownlinkTiming_DELAY,
+					TimingInfo: &gw.DownlinkTXInfo_DelayTimingInfo{
+						DelayTimingInfo: &gw.DelayTimingInfo{
+							Delay: ptypes.DurationProto(time.Second),
 						},
 					},
 				}, lorawan.PHYPayload{
@@ -2772,6 +2900,13 @@ func (ts *ClassATestSuite) TestLW11ReceiveWindowSelection() {
 							CodeRate:              "4/5",
 						},
 					},
+					Context: ts.RXInfo.Context,
+					Timing:  gw.DownlinkTiming_DELAY,
+					TimingInfo: &gw.DownlinkTXInfo_DelayTimingInfo{
+						DelayTimingInfo: &gw.DelayTimingInfo{
+							Delay: ptypes.DurationProto(time.Second),
+						},
+					},
 				}, lorawan.PHYPayload{
 					MHDR: lorawan.MHDR{
 						MType: lorawan.UnconfirmedDataDown,
@@ -2836,6 +2971,13 @@ func (ts *ClassATestSuite) TestLW11ReceiveWindowSelection() {
 							SpreadingFactor:       12,
 							PolarizationInversion: true,
 							CodeRate:              "4/5",
+						},
+					},
+					Context: ts.RXInfo.Context,
+					Timing:  gw.DownlinkTiming_DELAY,
+					TimingInfo: &gw.DownlinkTXInfo_DelayTimingInfo{
+						DelayTimingInfo: &gw.DelayTimingInfo{
+							Delay: ptypes.DurationProto(time.Second * 2),
 						},
 					},
 				}, lorawan.PHYPayload{
@@ -2904,6 +3046,13 @@ func (ts *ClassATestSuite) TestLW11ReceiveWindowSelection() {
 							CodeRate:              "4/5",
 						},
 					},
+					Context: ts.RXInfo.Context,
+					Timing:  gw.DownlinkTiming_DELAY,
+					TimingInfo: &gw.DownlinkTXInfo_DelayTimingInfo{
+						DelayTimingInfo: &gw.DelayTimingInfo{
+							Delay: ptypes.DurationProto(time.Second),
+						},
+					},
 				}, lorawan.PHYPayload{
 					MHDR: lorawan.MHDR{
 						MType: lorawan.UnconfirmedDataDown,
@@ -2934,6 +3083,13 @@ func (ts *ClassATestSuite) TestLW11ReceiveWindowSelection() {
 							SpreadingFactor:       12,
 							PolarizationInversion: true,
 							CodeRate:              "4/5",
+						},
+					},
+					Context: ts.RXInfo.Context,
+					Timing:  gw.DownlinkTiming_DELAY,
+					TimingInfo: &gw.DownlinkTXInfo_DelayTimingInfo{
+						DelayTimingInfo: &gw.DelayTimingInfo{
+							Delay: ptypes.DurationProto(time.Second * 2),
 						},
 					},
 				}, lorawan.PHYPayload{
@@ -3000,6 +3156,13 @@ func (ts *ClassATestSuite) TestLW11ReceiveWindowSelection() {
 							SpreadingFactor:       7,
 							PolarizationInversion: true,
 							CodeRate:              "4/5",
+						},
+					},
+					Context: ts.RXInfo.Context,
+					Timing:  gw.DownlinkTiming_DELAY,
+					TimingInfo: &gw.DownlinkTXInfo_DelayTimingInfo{
+						DelayTimingInfo: &gw.DelayTimingInfo{
+							Delay: ptypes.DurationProto(time.Second),
 						},
 					},
 				}, lorawan.PHYPayload{
@@ -3079,6 +3242,13 @@ func (ts *ClassATestSuite) TestLW11ReceiveWindowSelection() {
 							CodeRate:              "4/5",
 						},
 					},
+					Context: ts.RXInfo.Context,
+					Timing:  gw.DownlinkTiming_DELAY,
+					TimingInfo: &gw.DownlinkTXInfo_DelayTimingInfo{
+						DelayTimingInfo: &gw.DelayTimingInfo{
+							Delay: ptypes.DurationProto(time.Second),
+						},
+					},
 				}, lorawan.PHYPayload{
 					MHDR: lorawan.MHDR{
 						MType: lorawan.UnconfirmedDataDown,
@@ -3114,6 +3284,13 @@ func (ts *ClassATestSuite) TestLW11ReceiveWindowSelection() {
 							SpreadingFactor:       12,
 							PolarizationInversion: true,
 							CodeRate:              "4/5",
+						},
+					},
+					Context: ts.RXInfo.Context,
+					Timing:  gw.DownlinkTiming_DELAY,
+					TimingInfo: &gw.DownlinkTXInfo_DelayTimingInfo{
+						DelayTimingInfo: &gw.DelayTimingInfo{
+							Delay: ptypes.DurationProto(time.Second * 2),
 						},
 					},
 				}, lorawan.PHYPayload{

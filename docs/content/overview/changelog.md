@@ -9,6 +9,129 @@ description: Lists the changes per LoRa Server release, including steps how to u
 ---
 # Changelog
 
+## v2.8.2
+
+### Bugfixes
+
+* Fix ADR setup. [#396](https://github.com/brocaar/loraserver/pull/396)
+
+## v2.8.1
+
+### Improvement
+
+#### Validate DevAddr on enqueue
+
+A `DevAddr` field has been added to the `MulticastQueueItem` API field.
+When this field is set, LoRa Server will validate that the current active
+security-context has the same `DevAddr` and if not, the API returns an error.
+
+This prevents enqueue calls after the device (re)joins but before the new
+`AppSKey` has been signalled to LoRa App Server.
+
+## v2.8.0
+
+### Features
+
+#### Add `mqtt2to3` sub-command
+
+This sub-command translates MQTT messages from the old topics to the new
+topics (gw > ns) and backwards (ns > gw) and should help when migrating from
+v2 to v3 MQTT topics (see below).
+
+This sub-command can be started as (when using the [Debian / Ubuntu](https://www.loraserver.io/loraserver/install/debian/) package):
+
+* `/etc/init.d/loraserver-mqtt2to3 start`
+* `systemctl start loraserver-mqtt2to3`
+
+From the CLI, this can be started as:
+
+* `loraserver mqtt2to3`
+
+As soon as all LoRa Gateway Bridge instances are upgraded to v3, this is no
+longer needed.
+
+#### Azure integration
+
+Using the Azure integration, it is possible to connect gateways using the
+[Azure IoT Hub](https://azure.microsoft.com/en-us/services/iot-hub/) service.                                                                                                                                                               │[Azure IoT Hub](https://azure.microsoft.com/en-us/services/iot-hub/) service.
+This feature is still experimental and might (slightly) change.
+
+### Upgrading
+
+As a preparation to upgrade to LoRa Server v3, it is recommended to update the
+MQTT topic configuration to:
+
+```
+uplink_topic_template="gateway/+/event/up"
+stats_topic_template="gateway/+/event/stats"
+ack_topic_template="gateway/+/event/ack"
+downlink_topic_template="gateway/{{ .MAC }}/command/down"
+config_topic_template="gateway/{{ .MAC }}/command/config"
+```
+
+Together with the `mqtt2to3` sub-command (see above), this stays compatible
+with LoRa Gateway Bridge v2, but also provides compatibility with LoRa Gateway Bridge v3.
+Once LoRa Server v3 is released, it is recommended to first upgrade all LoRa
+Gateway Bridge instances to v3 and then upgrade LoRa Server to v3.
+
+## v2.7.0
+
+### Improvements
+
+#### Gateway downlink timing API
+
+In order to implement support for the [Basic Station](https://doc.sm.tc/station/)
+some small additions were made to the [gateway API](https://github.com/brocaar/loraserver/blob/master/api/gw/gw.proto),
+the API used in the communication between the [LoRa Gateway Bridge](https://www.loraserver.io/lora-gateway-bridge/)
+and LoRa Server.
+
+LoRa Server v2.7+ is compatible with both the LoRa Gateway Bridge v2 and
+(upcoming) v3 as it contains both the old and new fields. The old fields will
+be removed once LoRa Server v3 has been released.
+
+#### Max. ADR setting
+
+* Remove max. DR field from device-session and always use max. DR from service-profile.
+
+## v2.6.1
+
+### Bugfixes
+
+* Fix `CFList` with channel-mask for LoRaWAN 1.0.3 devices.
+* Fix triggering uplink configuration function (fixing de-duplication). [#387](https://github.com/brocaar/loraserver/issues/387)
+
+## v2.6.0
+
+### Features
+
+* On ADR, decrease device DR when the device is using a higher DR than the maximum DR set in the service-profile. [#375](https://github.com/brocaar/loraserver/issues/375)
+
+### Bugfixes
+
+* Implement missing `DeviceModeReq` mac-command for LoRaWAN 1.1. [#371](https://github.com/brocaar/loraserver/issues/371)
+* Fix triggering gateway config update. [#373](https://github.com/brocaar/loraserver/issues/373)
+
+### Improvements
+
+* Internal code-cleanup with regards to passing configuration and objects.
+* Internal migration from Dep to [Go modules](https://github.com/golang/go/wiki/Modules).
+
+## v2.6.0-test1
+
+### Features
+
+* On ADR, decrease device DR when the device is using a higher DR than the maximum DR set in the service-profile. [#375](https://github.com/brocaar/loraserver/issues/375)
+
+### Bugfixes
+
+* Implement missing `DeviceModeReq` mac-command for LoRaWAN 1.1. [#371](https://github.com/brocaar/loraserver/issues/371)
+* Fix triggering gateway config update. [#373](https://github.com/brocaar/loraserver/issues/373)
+
+### Improvements
+
+* Internal code-cleanup with regards to passing configuration and objects.
+* Internal migration from Dep to [Go modules](https://github.com/golang/go/wiki/Modules).
+
 ## v2.5.0
 
 ### Features

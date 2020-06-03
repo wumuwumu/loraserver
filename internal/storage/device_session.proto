@@ -2,7 +2,7 @@ syntax  = "proto3";
 
 package storage;
 
-import "github.com/brocaar/loraserver/api/common/common.proto";
+import "api/common/common.proto";
 
 message DeviceSessionPBChannel {
     // Frequency (Hz).
@@ -107,10 +107,6 @@ message DeviceSessionPB {
 	// MaxSupportedTXPowerIndex defines the maximum supported tx-power index
     // by the node, or 0 when not set.
     uint32 max_supported_tx_power_index = 21;
-
-	// MaxSupportedDR defines the maximum supported DR index by the node,
-    // or 0 when not set.
-    uint32 max_supported_dr = 22;
 
 	// NbTrans defines the number of transmissions for each unconfirmed uplink
 	// frame. In case of 0, the default value is used.

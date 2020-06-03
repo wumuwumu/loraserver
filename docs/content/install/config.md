@@ -406,7 +406,10 @@ get_downlink_data_delay="100ms"
     #
     # This defines the backend to use for the communication with the gateways.
     # Use the section name of one of the following gateway backends.
-    # E.g. "mqtt" or "gcp_pub_sub".
+        # Valid options are:
+    #  * mqtt
+    #  * gcp_pub_sub
+    #  * azure_iot_hub
     type="mqtt"
 
 
@@ -500,6 +503,25 @@ get_downlink_data_delay="100ms"
     #
     # The retention duration that LoRa Server will set on the uplink subscription.
     uplink_retention_duration="24h0m0s"
+
+
+    # Azure IoT Hub backend.
+    #
+    # Use this backend when the LoRa Gateway Bridge is configured to connect
+    # to the Azure IoT Hub MQTT broker.
+    [network_server.gateway.backend.azure_iot_hub]
+
+    # Events connection string.
+    #
+    # This connection string must point to the Service Bus Queue to which the
+    # IoT Hub is forwarding the (uplink) gateway events.
+    events_connection_string=""
+
+    # Commands connection string.
+    #
+    # This connection string must point to the IoT Hub and is used by LoRa Server
+    # for sending commands to the gateways.
+    commands_connection_string=""
 
 
   # Geolocation settings.
@@ -662,7 +684,7 @@ In the current implementation LoRa Server uses a fixed join-server URL
 
 In case this endpoint is secured using a TLS certificate and expects a client
 certificate, you must set `ca_cert`, `tls_cert` and `tls_key`.
-Also dont forget to change `server` from `http://...` to `https://...`.
+Also don't forget to change `server` from `http://...` to `https://...`.
 
 See [https://github.com/brocaar/loraserver-certificates](https://github.com/brocaar/loraserver-certificates)
 for a set of scripts to generate such certificates.
