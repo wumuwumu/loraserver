@@ -83,6 +83,7 @@ var setMACCommandsSet = setMACCommands(
 
 var responseTasks = []func(*dataContext) error{
 	getDeviceProfile,
+	getServiceProfile,
 	setDataTXInfo,
 	setToken,
 	getNextDeviceQueueItem,
@@ -371,6 +372,7 @@ func setTXInfoForRX1(ctx *dataContext) error {
 		GatewayId: rxInfo.GatewayId,
 		Board:     rxInfo.Board,
 		Antenna:   rxInfo.Antenna,
+		Context:   rxInfo.Context,
 	}
 
 	// get rx1 data-rate
@@ -397,9 +399,21 @@ func setTXInfoForRX1(ctx *dataContext) error {
 	txInfo.Frequency = uint32(freq)
 
 	// get timestamp
+	// TODO: remove in v3
 	txInfo.Timestamp = rxInfo.Timestamp + uint32(band.Band().GetDefaults().ReceiveDelay1/time.Microsecond)
 	if ctx.DeviceSession.RXDelay > 0 {
 		txInfo.Timestamp = rxInfo.Timestamp + uint32(time.Duration(ctx.DeviceSession.RXDelay)*time.Second/time.Microsecond)
+	}
+
+	delay := band.Band().GetDefaults().ReceiveDelay1
+	if ctx.DeviceSession.RXDelay > 0 {
+		delay = time.Duration(ctx.DeviceSession.RXDelay) * time.Second
+	}
+	txInfo.Timing = gw.DownlinkTiming_DELAY
+	txInfo.TimingInfo = &gw.DownlinkTXInfo_DelayTimingInfo{
+		DelayTimingInfo: &gw.DelayTimingInfo{
+			Delay: ptypes.DurationProto(delay),
+		},
 	}
 
 	// get tx power
@@ -437,10 +451,12 @@ func setTXInfoForRX2(ctx *dataContext) error {
 	}
 
 	var board, antenna, timestamp uint32
+	var context []byte
 	if ctx.RXPacket != nil && len(ctx.RXPacket.RXInfoSet) != 0 {
 		board = ctx.RXPacket.RXInfoSet[0].Board
 		antenna = ctx.RXPacket.RXInfoSet[0].Antenna
 		timestamp = ctx.RXPacket.RXInfoSet[0].Timestamp
+		context = ctx.RXPacket.RXInfoSet[0].Context
 	}
 
 	txInfo := gw.DownlinkTXInfo{
@@ -449,6 +465,7 @@ func setTXInfoForRX2(ctx *dataContext) error {
 		Antenna:     antenna,
 		Frequency:   uint32(ctx.DeviceSession.RX2Frequency),
 		Immediately: ctx.Immediately,
+		Context:     context,
 	}
 
 	// get data-rate
@@ -466,9 +483,28 @@ func setTXInfoForRX2(ctx *dataContext) error {
 
 	// get timestamp (when not tx immediately)
 	if !ctx.Immediately {
+		// TODO: remove in v3
 		txInfo.Timestamp = timestamp + uint32(band.Band().GetDefaults().ReceiveDelay2/time.Microsecond)
 		if ctx.DeviceSession.RXDelay > 0 {
 			txInfo.Timestamp = timestamp + uint32(time.Second*time.Duration(ctx.DeviceSession.RXDelay+1)/time.Microsecond)
+		}
+
+		delay := band.Band().GetDefaults().ReceiveDelay2
+		if ctx.DeviceSession.RXDelay > 0 {
+			delay = time.Duration(ctx.DeviceSession.RXDelay) * time.Second
+		}
+		txInfo.Timing = gw.DownlinkTiming_DELAY
+		txInfo.TimingInfo = &gw.DownlinkTXInfo_DelayTimingInfo{
+			DelayTimingInfo: &gw.DelayTimingInfo{
+				Delay: ptypes.DurationProto(delay),
+			},
+		}
+	}
+
+	if ctx.Immediately {
+		txInfo.Timing = gw.DownlinkTiming_IMMEDIATELY
+		txInfo.TimingInfo = &gw.DownlinkTXInfo_ImmediatelyTimingInfo{
+			ImmediatelyTimingInfo: &gw.ImmediatelyTimingInfo{},
 		}
 	}
 
@@ -495,9 +531,11 @@ func setTXInfoForClassB(ctx *dataContext) error {
 	}
 
 	var board, antenna uint32
+	var context []byte
 	if ctx.RXPacket != nil && len(ctx.RXPacket.RXInfoSet) != 0 {
 		board = ctx.RXPacket.RXInfoSet[0].Board
 		antenna = ctx.RXPacket.RXInfoSet[0].Antenna
+		context = ctx.RXPacket.RXInfoSet[0].Context
 	}
 
 	txInfo := gw.DownlinkTXInfo{
@@ -505,6 +543,7 @@ func setTXInfoForClassB(ctx *dataContext) error {
 		Board:     board,
 		Antenna:   antenna,
 		Frequency: uint32(ctx.DeviceSession.PingSlotFrequency),
+		Context:   context,
 	}
 
 	// get data-rate
@@ -585,7 +624,15 @@ func getNextDeviceQueueItem(ctx *dataContext) error {
 
 	// Update TXInfo with Class-B scheduling info
 	if ctx.RXPacket == nil && qi.EmitAtTimeSinceGPSEpoch != nil && len(ctx.DownlinkFrames) == 1 {
+		// TODO: remove in v3
 		ctx.DownlinkFrames[0].DownlinkFrame.TxInfo.TimeSinceGpsEpoch = ptypes.DurationProto(*qi.EmitAtTimeSinceGPSEpoch)
+
+		ctx.DownlinkFrames[0].DownlinkFrame.TxInfo.Timing = gw.DownlinkTiming_GPS_EPOCH
+		ctx.DownlinkFrames[0].DownlinkFrame.TxInfo.TimingInfo = &gw.DownlinkTXInfo_GpsEpochTimingInfo{
+			GpsEpochTimingInfo: &gw.GPSEpochTimingInfo{
+				TimeSinceGpsEpoch: ptypes.DurationProto(*qi.EmitAtTimeSinceGPSEpoch),
+			},
+		}
 
 		if ctx.DeviceSession.PingSlotFrequency == 0 {
 			beaconTime := *qi.EmitAtTimeSinceGPSEpoch - (*qi.EmitAtTimeSinceGPSEpoch % (128 * time.Second))
@@ -773,7 +820,7 @@ func requestADRChange(ctx *dataContext) error {
 		}
 	}
 
-	blocks, err := adr.HandleADR(ctx.DeviceSession, linkADRReq)
+	blocks, err := adr.HandleADR(ctx.ServiceProfile, ctx.DeviceSession, linkADRReq)
 	if err != nil {
 		log.WithError(err).WithFields(log.Fields{
 			"dev_eui": ctx.DeviceSession.DevEUI,

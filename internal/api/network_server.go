@@ -636,11 +636,6 @@ func (n *NetworkServerAPI) ActivateDevice(ctx context.Context, req *ns.ActivateD
 		return nil, errToRPCError(err)
 	}
 
-	sp, err := storage.GetServiceProfile(storage.DB(), d.ServiceProfileID)
-	if err != nil {
-		return nil, errToRPCError(err)
-	}
-
 	dp, err := storage.GetDeviceProfile(storage.DB(), d.DeviceProfileID)
 	if err != nil {
 		return nil, errToRPCError(err)
@@ -661,8 +656,7 @@ func (n *NetworkServerAPI) ActivateDevice(ctx context.Context, req *ns.ActivateD
 		AFCntDown:          req.DeviceActivation.AFCntDown,
 		SkipFCntValidation: req.DeviceActivation.SkipFCntCheck || d.SkipFCntCheck,
 
-		RXWindow:       storage.RX1,
-		MaxSupportedDR: sp.DRMax,
+		RXWindow: storage.RX1,
 
 		MACVersion: dp.MACVersion,
 	}
@@ -1295,12 +1289,25 @@ func (n *NetworkServerAPI) CreateDeviceQueueItem(ctx context.Context, req *ns.Cr
 		return nil, errToRPCError(err)
 	}
 
-	dp, err := storage.GetDeviceProfile(storage.DB(), d.DeviceProfileID)
+	dp, err := storage.GetAndCacheDeviceProfile(storage.DB(), storage.RedisPool(), d.DeviceProfileID)
 	if err != nil {
 		return nil, errToRPCError(err)
 	}
 
+	ds, err := storage.GetDeviceSession(storage.RedisPool(), d.DevEUI)
+	if err != nil {
+		return nil, errToRPCError(err)
+	}
+
+	var devAddr lorawan.DevAddr
+	copy(devAddr[:], req.Item.DevAddr)
+
+	if (devAddr != lorawan.DevAddr{0, 0, 0, 0} && ds.DevAddr != devAddr) {
+		return nil, grpc.Errorf(codes.InvalidArgument, "device security-context out of sync")
+	}
+
 	qi := storage.DeviceQueueItem{
+		DevAddr:    devAddr,
 		DevEUI:     d.DevEUI,
 		FRMPayload: req.Item.FrmPayload,
 		FCnt:       req.Item.FCnt,
@@ -1375,6 +1382,7 @@ func (n *NetworkServerAPI) GetDeviceQueueItemsForDevEUI(ctx context.Context, req
 	var out ns.GetDeviceQueueItemsForDevEUIResponse
 	for i := range items {
 		qi := ns.DeviceQueueItem{
+			DevAddr:    items[i].DevAddr[:],
 			DevEui:     items[i].DevEUI[:],
 			FrmPayload: items[i].FRMPayload,
 			FCnt:       items[i].FCnt,
