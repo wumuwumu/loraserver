@@ -5,7 +5,12 @@ VERSION := $(shell git describe --always |sed -e "s/^v//")
 build: statics
 	@echo "Compiling source"
 	@mkdir -p build
-	go build $(GO_EXTRA_BUILD_ARGS) -ldflags "-s -w -X main.version=$(VERSION)" -o build/loraserver cmd/loraserver/main.go
+	go build $(GO_EXTRA_BUILD_ARGS) -ldflags "-s -w -X main.version=$(VERSION)" -o build/mac/loraserver cmd/loraserver/main.go
+
+linux: statics
+	@echo "Compiling source"
+	@mkdir -p build/linux
+	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build $(GO_EXTRA_BUILD_ARGS) -ldflags "-s -w -X main.version=$(VERSION)" -o build/linux/loraserver cmd/loraserver/main.go
 
 clean:
 	@echo "Cleaning up workspace"

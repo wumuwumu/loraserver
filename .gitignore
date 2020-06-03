@@ -1,6 +1,6 @@
 # hidden files
 .*
-
+_vendor-20190228174238
 # Vagrant
 Vagrantfile
 

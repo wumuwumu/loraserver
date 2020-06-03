@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/base64"
 	"fmt"
+	"github.com/brocaar/loraserver/api/as"
 	"strings"
 	"sync"
 	"time"
@@ -121,7 +122,9 @@ func NewBackend(c config.Config) (gateway.Gateway, error) {
 
 	return &b, nil
 }
-
+func (b *Backend) SendHeartPacket(pl as.HandleUplinkDataRequest) error {
+	return nil;
+}
 // SendTXPacket sends the given downlink frame to the gateway.
 func (b *Backend) SendTXPacket(pl gw.DownlinkFrame) error {
 	if pl.TxInfo == nil {
@@ -137,6 +140,11 @@ func (b *Backend) SendTXPacket(pl gw.DownlinkFrame) error {
 	}
 
 	return b.publishCommand(gatewayID, "down", bb)
+}
+
+func (b *Backend) SendUplinkPacket(uplinkPacket as.HandleUplinkDataRequest) error{
+
+	return nil
 }
 
 // SendGatewayConfigPacket sends the given gateway configuration to the gateway.

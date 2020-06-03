@@ -1,6 +1,9 @@
 package gateway
 
-import "github.com/brocaar/loraserver/api/gw"
+import (
+	"github.com/brocaar/loraserver/api/as"
+	"github.com/brocaar/loraserver/api/gw"
+)
 
 var backend Gateway
 
@@ -22,5 +25,6 @@ type Gateway interface {
 	RXPacketChan() chan gw.UplinkFrame                     // channel containing the received packets
 	StatsPacketChan() chan gw.GatewayStats                 // channel containing the received gateway stats
 	DownlinkTXAckChan() chan gw.DownlinkTXAck              // channel containing the downlink tx acknowledgements
+    SendHeartPacket(publishDataUpReq as.HandleUplinkDataRequest) error
 	Close() error                                          // close the gateway backend.
 }

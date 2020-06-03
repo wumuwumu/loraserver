@@ -86,6 +86,8 @@ func init() {
 	viper.SetDefault("network_server.gateway.backend.mqtt.stats_topic_template", "gateway/+/stats")
 	viper.SetDefault("network_server.gateway.backend.mqtt.ack_topic_template", "gateway/+/ack")
 	viper.SetDefault("network_server.gateway.backend.mqtt.config_topic_template", "gateway/{{ .MAC }}/config")
+	viper.SetDefault("network_server.gateway.backend.mqtt.heart_topic_template", "lorawan/gateway/uplinkPacket/temp")
+
 	viper.SetDefault("network_server.gateway.backend.mqtt.clean_session", true)
 	viper.SetDefault("join_server.resolve_domain_suffix", ".joineuis.lora-alliance.org")
 	viper.SetDefault("join_server.default.server", "http://localhost:8003")

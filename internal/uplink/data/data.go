@@ -3,6 +3,7 @@ package data
 import (
 	"context"
 	"fmt"
+	"github.com/brocaar/loraserver/internal/backend/gateway"
 	"time"
 
 	"github.com/pkg/errors"
@@ -77,6 +78,7 @@ type dataContext struct {
 	ServiceProfile          storage.ServiceProfile
 	ApplicationServerClient as.ApplicationServerServiceClient
 	MACCommandResponses     []storage.MACCommandBlock
+	MustSendDownlink        bool
 }
 
 // Handle handles an uplink data frame
@@ -410,45 +412,62 @@ func sendRXInfoToNetworkController(ctx *dataContext) error {
 }
 
 func handleFOptsMACCommands(ctx *dataContext) error {
-	if len(ctx.MACPayload.FHDR.FOpts) > 0 {
-		blocks, err := handleUplinkMACCommands(&ctx.DeviceSession, ctx.DeviceProfile, ctx.ServiceProfile, ctx.ApplicationServerClient, ctx.MACPayload.FHDR.FOpts, ctx.RXPacket)
-		if err != nil {
-			log.WithFields(log.Fields{
-				"dev_eui": ctx.DeviceSession.DevEUI,
-				"fopts":   ctx.MACPayload.FHDR.FOpts,
-			}).Errorf("handle FOpts mac commands error: %s", err)
-		} else {
-			ctx.MACCommandResponses = append(ctx.MACCommandResponses, blocks...)
-		}
+	if len(ctx.MACPayload.FHDR.FOpts) == 0 {
+		return nil
+	}
+
+	blocks, mustRespondWithDownlink, err := handleUplinkMACCommands(
+		&ctx.DeviceSession,
+		ctx.DeviceProfile,
+		ctx.ServiceProfile,
+		ctx.ApplicationServerClient,
+		ctx.MACPayload.FHDR.FOpts,
+		ctx.RXPacket,
+	)
+	if err != nil {
+		log.WithFields(log.Fields{
+			"dev_eui": ctx.DeviceSession.DevEUI,
+			"fopts":   ctx.MACPayload.FHDR.FOpts,
+		}).Errorf("handle FOpts mac commands error: %s", err)
+		return nil
+	}
+
+	ctx.MACCommandResponses = append(ctx.MACCommandResponses, blocks...)
+	if !ctx.MustSendDownlink {
+		ctx.MustSendDownlink = mustRespondWithDownlink
 	}
 
 	return nil
 }
 
 func handleFRMPayloadMACCommands(ctx *dataContext) error {
-	if ctx.MACPayload.FPort != nil && *ctx.MACPayload.FPort == 0 {
-		if len(ctx.MACPayload.FRMPayload) == 0 {
-			return errors.New("expected mac commands, but FRMPayload is empty (FPort=0)")
-		}
+	if ctx.MACPayload.FPort == nil || *ctx.MACPayload.FPort != 0 {
+		return nil
+	}
 
-		blocks, err := handleUplinkMACCommands(&ctx.DeviceSession, ctx.DeviceProfile, ctx.ServiceProfile, ctx.ApplicationServerClient, ctx.MACPayload.FRMPayload, ctx.RXPacket)
-		if err != nil {
-			log.WithFields(log.Fields{
-				"dev_eui":  ctx.DeviceSession.DevEUI,
-				"commands": ctx.MACPayload.FRMPayload,
-			}).Errorf("handle FRMPayload mac commands error: %s", err)
-		} else {
-			ctx.MACCommandResponses = append(ctx.MACCommandResponses, blocks...)
-		}
+	if len(ctx.MACPayload.FRMPayload) == 0 {
+		return errors.New("expected mac commands, but FRMPayload is empty (FPort=0)")
+	}
+
+	blocks, mustRespondWithDownlink, err := handleUplinkMACCommands(&ctx.DeviceSession, ctx.DeviceProfile, ctx.ServiceProfile, ctx.ApplicationServerClient, ctx.MACPayload.FRMPayload, ctx.RXPacket)
+	if err != nil {
+		log.WithFields(log.Fields{
+			"dev_eui":  ctx.DeviceSession.DevEUI,
+			"commands": ctx.MACPayload.FRMPayload,
+		}).Errorf("handle FRMPayload mac commands error: %s", err)
+		return nil
+	}
+
+	ctx.MACCommandResponses = append(ctx.MACCommandResponses, blocks...)
+	if !ctx.MustSendDownlink {
+		ctx.MustSendDownlink = mustRespondWithDownlink
 	}
 
 	return nil
 }
 
 func sendFRMPayloadToApplicationServer(ctx *dataContext) error {
-	if ctx.MACPayload.FPort == nil || (ctx.MACPayload.FPort != nil && *ctx.MACPayload.FPort == 0) {
-		return nil
-	}
+
 
 	publishDataUpReq := as.HandleUplinkDataRequest{
 		DevEui:  ctx.DeviceSession.DevEUI[:],
@@ -457,7 +476,15 @@ func sendFRMPayloadToApplicationServer(ctx *dataContext) error {
 		Adr:     ctx.MACPayload.FHDR.FCtrl.ADR,
 		TxInfo:  ctx.RXPacket.TXInfo,
 	}
+	go func(p as.HandleUplinkDataRequest) {
+		err :=gateway.Backend().SendHeartPacket(p);
+		log.WithError(err).Info("发送心跳包出错")
+	}(publishDataUpReq)
 
+
+	if ctx.MACPayload.FPort == nil || (ctx.MACPayload.FPort != nil && *ctx.MACPayload.FPort == 0) {
+		return nil
+	}
 	dr, err := helpers.GetDataRateIndex(true, ctx.RXPacket.TXInfo, band.Band())
 	if err != nil {
 		errors.Wrap(err, "get data-rate error")
@@ -572,7 +599,7 @@ func handleDownlink(ctx *dataContext) error {
 		ctx.ServiceProfile,
 		ctx.DeviceSession,
 		ctx.MACPayload.FHDR.FCtrl.ADR,
-		ctx.MACPayload.FHDR.FCtrl.ADRACKReq,
+		ctx.MACPayload.FHDR.FCtrl.ADRACKReq || ctx.MustSendDownlink,
 		ctx.RXPacket.PHYPayload.MHDR.MType == lorawan.ConfirmedDataUp,
 		ctx.MACCommandResponses,
 	); err != nil {
@@ -600,19 +627,23 @@ func sendRXInfoPayload(ds storage.DeviceSession, rxPacket models.RXPacket) error
 	return nil
 }
 
-func handleUplinkMACCommands(ds *storage.DeviceSession, dp storage.DeviceProfile, sp storage.ServiceProfile, asClient as.ApplicationServerServiceClient, commands []lorawan.Payload, rxPacket models.RXPacket) ([]storage.MACCommandBlock, error) {
+// handleUplinkMACCommands handles the given uplink mac-commands.
+// It returns the mac-commands to respond with + a bool indicating the a downlink MUST be send,
+// this to make sure that a response has been received by the NS.
+func handleUplinkMACCommands(ds *storage.DeviceSession, dp storage.DeviceProfile, sp storage.ServiceProfile, asClient as.ApplicationServerServiceClient, commands []lorawan.Payload, rxPacket models.RXPacket) ([]storage.MACCommandBlock, bool, error) {
 	var cids []lorawan.CID
 	var out []storage.MACCommandBlock
+	var mustRespondWithDownlink bool
 	blocks := make(map[lorawan.CID]storage.MACCommandBlock)
 
 	// group mac-commands by CID
 	for _, pl := range commands {
 		cmd, ok := pl.(*lorawan.MACCommand)
 		if !ok {
-			return nil, fmt.Errorf("expected *lorawan.MACCommand, got %T", pl)
+			return nil, false, fmt.Errorf("expected *lorawan.MACCommand, got %T", pl)
 		}
 		if cmd == nil {
-			return nil, errors.New("*lorawan.MACCommand must not be nil")
+			return nil, false, errors.New("*lorawan.MACCommand must not be nil")
 		}
 
 		block, ok := blocks[cmd.CID]
@@ -627,6 +658,16 @@ func handleUplinkMACCommands(ds *storage.DeviceSession, dp storage.DeviceProfile
 	}
 
 	for _, cid := range cids {
+		switch cid {
+		case lorawan.RXTimingSetupAns:
+			// From the specs:
+			// The RXTimingSetupAns command should be added in the FOpt field of all uplinks until a
+			// class A downlink is received by the end-device.
+			mustRespondWithDownlink = true
+		default:
+			// nothing to do
+		}
+
 		block := blocks[cid]
 
 		logFields := log.Fields{
@@ -695,5 +736,5 @@ func handleUplinkMACCommands(ds *storage.DeviceSession, dp storage.DeviceProfile
 		}
 	}
 
-	return out, nil
+	return out, mustRespondWithDownlink, nil
 }
