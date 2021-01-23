@@ -69,3 +69,6 @@ serve: build
 
 run-compose-test:
 	docker-compose run --rm loraserver make test
+
+docker:
+	docker build -t loraserver .

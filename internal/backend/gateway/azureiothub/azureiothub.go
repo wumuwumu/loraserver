@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/base64"
 	"fmt"
+	"github.com/brocaar/loraserver/api/as"
 	"strings"
 	"sync"
 	"time"
@@ -106,6 +107,11 @@ func NewBackend(c config.Config) (gateway.Gateway, error) {
 
 	return &b, nil
 }
+
+func (b *Backend)    SendHeartPacket(publishDataUpReq as.HandleUplinkDataRequest) error{
+	return nil
+}
+
 
 func (b *Backend) SendTXPacket(pl gw.DownlinkFrame) error {
 	if pl.TxInfo == nil {

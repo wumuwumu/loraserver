@@ -30,5 +30,6 @@ func TestTime(t *testing.T) {
 				So(time.Time(gpsTime).Equal(test.Time), ShouldBeTrue)
 			})
 		}
+
 	})
 }

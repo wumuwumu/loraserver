@@ -32,7 +32,7 @@ const defaultCodeRate = "4/5"
 
 // classBScheduleMargin contains a Class-B scheduling margin to make sure
 // there is enough time between scheduling and the actual Class-B ping-slot.
-const classBScheduleMargin = 5 * time.Second
+const classBScheduleMargin = 1 * time.Second
 
 // NetworkServerAPI defines the nework-server API.
 type NetworkServerAPI struct{}
@@ -1315,6 +1315,11 @@ func (n *NetworkServerAPI) CreateDeviceQueueItem(ctx context.Context, req *ns.Cr
 		Confirmed:  req.Item.Confirmed,
 	}
 
+	log.WithFields(log.Fields{
+		"eui":d.DevEUI,
+		"classb":dp.SupportsClassB,
+	}).Info("设备信息")
+
 	// When the device is operating in Class-B and has a beacon lock, calculate
 	// the next ping-slot.
 	if dp.SupportsClassB {
@@ -1333,7 +1338,10 @@ func (n *NetworkServerAPI) CreateDeviceQueueItem(ctx context.Context, req *ns.Cr
 			if scheduleAfterGPSEpochTS == 0 {
 				scheduleAfterGPSEpochTS = gps.Time(time.Now()).TimeSinceGPSEpoch()
 			}
-
+			log.WithFields(log.Fields{
+				"scheduleAfterGPSEpochTS":scheduleAfterGPSEpochTS,
+				"classBScheduleMargin":classBScheduleMargin,
+			}).Info("获取scheduleAfterGPSEpochTS时间")
 			// take some margin into account
 			scheduleAfterGPSEpochTS += classBScheduleMargin
 
@@ -1342,7 +1350,14 @@ func (n *NetworkServerAPI) CreateDeviceQueueItem(ctx context.Context, req *ns.Cr
 				return nil, errToRPCError(err)
 			}
 
+
 			timeoutTime := time.Time(gps.NewFromTimeSinceGPSEpoch(gpsEpochTS)).Add(time.Second * time.Duration(dp.ClassBTimeout))
+			log.WithFields(log.Fields{
+				"gpsEpochTS":gpsEpochTS,
+				"timeoutTime":timeoutTime,
+				"classBtimeout":dp.ClassBTimeout,
+				"time":time.Now(),
+			}).Info("最终计算出来的时间")
 			qi.EmitAtTimeSinceGPSEpoch = &gpsEpochTS
 			qi.TimeoutAfter = &timeoutTime
 		}
